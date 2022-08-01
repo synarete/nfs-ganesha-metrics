@@ -1,15 +1,23 @@
-# Binaries for programs and plugins
-*.exe
-*.exe~
-*.dll
-*.so
-*.dylib
-
-# Test binary, built with `go test -c`
+# test binary, build with `go test -c`
 *.test
 
-# Output of the go coverage tool, specifically when used with LiteIDE
-*.out
+# editor and IDE paraphernalia
+*.swp
+*.swo
+*~
+/.vscode
 
-# Dependency directories (remove the comment below to include it)
-# vendor/
+# auto-generated tag files
+tags
+
+# user-local configuration
+devel.mk
+
+# local GOBIN for build tools
+/.bin
+
+# output bin directory
+/bin
+
+# external vendor sources
+/vendor
