@@ -1,5 +1,5 @@
 # Build nfs-ganesha-metrics
-FROM golang:1.18 as builder
+FROM golang:1.19 as builder
 ARG GIT_VERSION="(unset)"
 ARG COMMIT_ID="(unset)"
 ARG ARCH=""
@@ -23,7 +23,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} GO111MODULE=on \
     -o nfsgmetrics cmd/main.go
 
 # Create stand-alone go image
-FROM golang:1.18-alpine
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
 COPY --from=builder /workspace/nfsgmetrics /bin/nfsgmetrics
 
 ENTRYPOINT ["/bin/nfsgmetrics"]
