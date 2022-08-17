@@ -85,14 +85,21 @@ func (nme *nfsgMetricsExporter) newNfsgVersionsCollector() prometheus.Collector 
 // Premetheus metrics
 type nfsgExportsCollector struct {
 	nfsgCollector
-	reader *ExportsDbusReader
 }
 
 func (col *nfsgExportsCollector) Collect(ch chan<- prometheus.Metric) {
-	if col.reader == nil {
+	reader := NewExportsDbusReader()
+	if err := reader.Setup(); err != nil {
+		col.nme.log.Error(err, "Collect exports stats")
 		return
 	}
-	_, exports, _ := col.reader.GetExports()
+	defer reader.Close()
+
+	_, exports, err := reader.GetExports()
+	if err != nil {
+		col.nme.log.Error(err, "GetExports")
+		return
+	}
 	ch <- prometheus.MustNewConstMetric(
 		col.dsc[0],
 		prometheus.GaugeValue,
@@ -100,7 +107,7 @@ func (col *nfsgExportsCollector) Collect(ch chan<- prometheus.Metric) {
 
 	for _, export := range exports {
 		exportID := export.ExportID
-		stats, ok, err := col.reader.GetTotalOPS(uint16(exportID))
+		stats, ok, err := reader.GetTotalOPS(uint16(exportID))
 		if err != nil || !ok {
 			continue
 		}
@@ -129,13 +136,11 @@ func (col *nfsgExportsCollector) Collect(ch chan<- prometheus.Metric) {
 			strconv.Itoa(int(exportID)),
 			export.Path)
 	}
-
 }
 
 func (nme *nfsgMetricsExporter) newNfsgExportsCollector() prometheus.Collector {
 	col := &nfsgExportsCollector{}
 	col.nme = nme
-	col.reader, _ = NewExportsDbusReader()
 	col.dsc = []*prometheus.Desc{
 		prometheus.NewDesc(
 			collectorName("export", "count"),
@@ -164,14 +169,21 @@ func (nme *nfsgMetricsExporter) newNfsgExportsCollector() prometheus.Collector {
 // Premetheus metrics
 type nfsgClientsCollector struct {
 	nfsgCollector
-	reader *ClientsDbusReader
 }
 
 func (col *nfsgClientsCollector) Collect(ch chan<- prometheus.Metric) {
-	if col.reader == nil {
+	reader := NewClientsDbusReader()
+	if err := reader.Setup(); err != nil {
+		col.nme.log.Error(err, "Collect clients stats")
 		return
 	}
-	_, clients, _ := col.reader.GetClients()
+	defer reader.Close()
+
+	_, clients, err := reader.GetClients()
+	if err != nil {
+		col.nme.log.Error(err, "GetClients")
+		return
+	}
 	ch <- prometheus.MustNewConstMetric(
 		col.dsc[0],
 		prometheus.GaugeValue,
@@ -179,7 +191,7 @@ func (col *nfsgClientsCollector) Collect(ch chan<- prometheus.Metric) {
 
 	for _, client := range clients {
 		ipaddr := client.Client
-		ios, ok, err := col.reader.GetClientIOs(ipaddr)
+		ios, ok, err := reader.GetClientIOs(ipaddr)
 		if err != nil || !ok {
 			continue
 		}
@@ -340,7 +352,6 @@ func (col *nfsgClientsCollector) Collect(ch chan<- prometheus.Metric) {
 func (nme *nfsgMetricsExporter) newNfsgClientsCollector() prometheus.Collector {
 	col := &nfsgClientsCollector{}
 	col.nme = nme
-	col.reader, _ = NewClientsDbusReader()
 	col.dsc = []*prometheus.Desc{
 		prometheus.NewDesc(
 			collectorName("client", "count"),

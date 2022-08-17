@@ -4,9 +4,11 @@ package metrics
 
 import (
 	"errors"
+	"os"
 	"reflect"
+	"strconv"
 
-	"github.com/godbus/dbus"
+	dbus "github.com/godbus/dbus/v5"
 	"golang.org/x/sys/unix"
 )
 
@@ -17,7 +19,7 @@ const (
 	nfsGaneshaExportInterface       = "/org/ganesha/nfsd/ExportMgr"
 	nfsGaneshaDbusClientMgrPrefix   = "org.ganesha.nfsd.clientmgr"
 	nfsGaneshaDbusClientStatsPrefix = "org.ganesha.nfsd.clientstats"
-	nfsGaneshaClinetInterface       = "/org/ganesha/nfsd/ClientMgr"
+	nfsGaneshaClientInterface       = "/org/ganesha/nfsd/ClientMgr"
 )
 
 // DbusReader
@@ -25,18 +27,43 @@ type DbusReader struct {
 	dbusServicePrefix string
 	dbusStatsPrefix   string
 	dbusMgrPrefix     string
+	dbusInterfacePath string
 	dbusConn          *dbus.Conn
 	dbusObject        dbus.BusObject
 }
 
-// ExportsDbusReader
-type ExportsDbusReader struct {
-	DbusReader
+func (dr *DbusReader) Setup() error {
+	conn, err := dbus.SystemBusPrivate()
+	if err != nil {
+		return err
+	}
+
+	methods := []dbus.Auth{dbus.AuthExternal(strconv.Itoa(os.Getuid()))}
+	err = conn.Auth(methods)
+	if err != nil {
+		conn.Close()
+		return err
+	}
+
+	err = conn.Hello()
+	if err != nil {
+		conn.Close()
+		return err
+	}
+
+	dr.dbusConn = conn
+	dr.dbusObject = conn.Object(
+		dr.dbusServicePrefix,
+		dbus.ObjectPath(dr.dbusInterfacePath),
+	)
+	return nil
 }
 
-// ClientsDbusReader
-type ClientsDbusReader struct {
-	DbusReader
+func (dr *DbusReader) Close() {
+	if dr.dbusConn != nil {
+		dr.dbusConn.Close()
+		dr.dbusConn = nil
+	}
 }
 
 func (dr *DbusReader) makeDbusCall(method string) (*dbus.Call, error) {
@@ -77,24 +104,21 @@ func (dr *DbusReader) mgrMethod(name string) string {
 	return dr.dbusMgrPrefix + "." + name
 }
 
+// ExportsDbusReader
+type ExportsDbusReader struct {
+	DbusReader
+}
+
 // NewExportsDbusReader
-func NewExportsDbusReader() (*ExportsDbusReader, error) {
-	conn, err := dbus.SystemBus()
-	if err != nil {
-		return nil, err
-	}
+func NewExportsDbusReader() *ExportsDbusReader {
 	return &ExportsDbusReader{
 		DbusReader{
 			dbusServicePrefix: nfsGaneshaDbusServicePrefix,
 			dbusStatsPrefix:   nfsGaneshaDbusExportStatsPrefix,
 			dbusMgrPrefix:     nfsGaneshaDbusExportMgrPrefix,
-			dbusConn:          conn,
-			dbusObject: conn.Object(
-				nfsGaneshaDbusServicePrefix,
-				nfsGaneshaExportInterface,
-			),
+			dbusInterfacePath: nfsGaneshaExportInterface,
 		},
-	}, nil
+	}
 }
 
 func (exdr *ExportsDbusReader) GetExports() (
@@ -199,24 +223,21 @@ func (exdr *ExportsDbusReader) makeExportStatsDbusCall(
 	return exdr.makeDbusCallWith(method, exportID)
 }
 
+// ClientsDbusReader
+type ClientsDbusReader struct {
+	DbusReader
+}
+
 // NewClientsDbusReader
-func NewClientsDbusReader() (*ClientsDbusReader, error) {
-	conn, err := dbus.SystemBus()
-	if err != nil {
-		return nil, err
-	}
+func NewClientsDbusReader() *ClientsDbusReader {
 	return &ClientsDbusReader{
 		DbusReader{
 			dbusServicePrefix: nfsGaneshaDbusServicePrefix,
 			dbusStatsPrefix:   nfsGaneshaDbusClientStatsPrefix,
 			dbusMgrPrefix:     nfsGaneshaDbusClientMgrPrefix,
-			dbusConn:          conn,
-			dbusObject: conn.Object(
-				nfsGaneshaDbusServicePrefix,
-				nfsGaneshaClinetInterface,
-			),
+			dbusInterfacePath: nfsGaneshaClientInterface,
 		},
-	}, nil
+	}
 }
 
 func (cldr *ClientsDbusReader) GetClients() (unix.Timespec, []Client, error) {

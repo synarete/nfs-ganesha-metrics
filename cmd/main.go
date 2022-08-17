@@ -32,6 +32,15 @@ func main() {
 
 	log.Info("Self", "PodID", metrics.GetSelfPodID())
 
+	log.Info("IDs", "uid", os.Getuid(), "gid", os.Getgid())
+
+	log.Info("Env",
+		"KUBECONFIG",
+		os.Getenv("KUBECONFIG"),
+		"DBUS_SESSION_BUS_ADDRESS",
+		os.Getenv("DBUS_SESSION_BUS_ADDRESS"),
+	)
+
 	err := metrics.RunNfsgMetricsExporter(log)
 	if err != nil {
 		os.Exit(1)

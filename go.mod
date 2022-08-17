@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/go-logr/logr v1.2.3
-	github.com/godbus/dbus v4.1.0+incompatible
+	github.com/godbus/dbus/v5 v5.1.0
 	github.com/prometheus/client_golang v1.12.2
 	golang.org/x/sys v0.0.0-20220731174439-a90be440212d
 	k8s.io/api v0.24.3
