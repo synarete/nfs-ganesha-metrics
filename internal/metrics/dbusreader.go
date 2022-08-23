@@ -213,10 +213,6 @@ func parseOPs(v interface{}) OperationCount {
 	return ops
 }
 
-func isSlice(v interface{}) bool {
-	return reflect.TypeOf(v).Kind() == reflect.Slice
-}
-
 func (exdr *ExportsDbusReader) makeExportStatsDbusCall(
 	name string, exportID uint16) (*dbus.Call, bool, error) {
 	method := exdr.statsMethod(name)
@@ -369,6 +365,9 @@ func ParseIOStats(v []interface{}) (IOStats, int) {
 func ParseIOCounts(in interface{}) (IOCounts, int) {
 	cnt := 0
 	ret := IOCounts{}
+	if !isSlice(in) {
+		return ret, cnt
+	}
 	dat := reflect.ValueOf(in)
 	v, ok := dat.Interface().([]interface{})
 	if !ok {
@@ -418,4 +417,8 @@ func asBool(v reflect.Value) (bool, bool) {
 		return false, false
 	}
 	return b, true
+}
+
+func isSlice(v interface{}) bool {
+	return reflect.TypeOf(v).Kind() == reflect.Slice
 }
