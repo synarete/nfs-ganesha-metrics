@@ -213,6 +213,39 @@ func parseOPs(v interface{}) OperationCount {
 	return ops
 }
 
+func (exdr *ExportsDbusReader) GetFullV3Stats(exportID uint16) error {
+	call, _, err := exdr.makeExportStatsDbusCall("GetFULLV3Stats", exportID)
+	if err != nil {
+		return err
+	}
+	if call == nil {
+		return nil
+	}
+	return nil
+}
+
+func (exdr *ExportsDbusReader) GetFullV4Stats(exportID uint16) error {
+	call, _, err := exdr.makeExportStatsDbusCall("GetFULLV4Stats", exportID)
+	if err != nil {
+		return err
+	}
+	if call == nil {
+		return nil
+	}
+	return nil
+}
+
+func (exdr *ExportsDbusReader) GetAuthStats(exportID uint16) error {
+	call, _, err := exdr.makeExportStatsDbusCall("GetAuthStats", exportID)
+	if err != nil {
+		return err
+	}
+	if call == nil {
+		return nil
+	}
+	return nil
+}
+
 func (exdr *ExportsDbusReader) makeExportStatsDbusCall(
 	name string, exportID uint16) (*dbus.Call, bool, error) {
 	method := exdr.statsMethod(name)

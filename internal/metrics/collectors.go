@@ -106,8 +106,8 @@ func (col *nfsgExportsCollector) Collect(ch chan<- prometheus.Metric) {
 		float64(len(exports)))
 
 	for _, export := range exports {
-		exportID := export.ExportID
-		stats, ok, err := reader.GetTotalOPS(uint16(exportID))
+		exportID := uint16(export.ExportID)
+		stats, ok, err := reader.GetTotalOPS(exportID)
 		if err != nil || !ok {
 			continue
 		}
